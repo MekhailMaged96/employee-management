@@ -4,6 +4,7 @@ import com.example.employee_management_system.dto.CreateEmployeeDto;
 import com.example.employee_management_system.dto.EmployeeDto;
 import com.example.employee_management_system.entity.Employee;
 import com.example.employee_management_system.exception.ResourceNotFoundException;
+import com.example.employee_management_system.mapper.EmployeeMapper;
 import com.example.employee_management_system.repository.EmployeeRepository;
 import com.example.employee_management_system.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
@@ -18,15 +19,12 @@ import java.util.stream.Collectors;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository  employeeRepository;
+    private final EmployeeMapper employeeMapper;
 
     @Override
     public Employee save(CreateEmployeeDto employee) {
 
-        Employee emp = Employee.builder()
-                    .name(employee.getName())
-                  .email(employee.getEmail())
-                    .salary(employee.getSalary())
-                    .build();
+        Employee emp = employeeMapper.toEntity(employee);
 
         return employeeRepository.save(emp);
 
@@ -36,7 +34,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeDto getById(Long id) {
         Employee emp = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
-        return EmployeeDto.toDto(emp);
+        return employeeMapper.toDto(emp);
     }
 
     @Override

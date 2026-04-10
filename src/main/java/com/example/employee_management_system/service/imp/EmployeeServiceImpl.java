@@ -3,9 +3,11 @@ package com.example.employee_management_system.service.imp;
 import com.example.employee_management_system.dto.CreateEmployeeDto;
 import com.example.employee_management_system.dto.EmployeeDto;
 import com.example.employee_management_system.entity.Employee;
+import com.example.employee_management_system.exception.ResourceNotFoundException;
 import com.example.employee_management_system.repository.EmployeeRepository;
 import com.example.employee_management_system.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,7 +34,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDto getById(Long id) {
-        Employee emp = employeeRepository.findById(id).orElse(null);
+        Employee emp = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
         return EmployeeDto.toDto(emp);
     }
 
@@ -54,11 +57,16 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public void delete(Long id) {
-        employeeRepository.deleteById(id);
+        try {
+            employeeRepository.deleteById(id);
+        } catch (EmptyResultDataAccessException ex) {
+            throw new ResourceNotFoundException("Employee not found with id: " + id);
+        }
     }
 
-    // internal helper to fetch entity by id
+    // internal helper to fetch entity by id, throws if not found
     private Employee getByIdInternal(Long id) {
-        return employeeRepository.findById(id).orElse(null);
+        return employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
 }

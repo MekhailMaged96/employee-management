@@ -2,9 +2,11 @@ package com.example.employee_management_system.controller;
 
 
 import com.example.employee_management_system.dto.CreateEmployeeDto;
+import com.example.employee_management_system.dto.CreatedEmployeeDto;
+import jakarta.validation.Valid;
 import com.example.employee_management_system.dto.EmployeeDto;
+import com.example.employee_management_system.dto.UpdatedEmployeeDto;
 import com.example.employee_management_system.entity.Employee;
-import com.example.employee_management_system.mapper.EmployeeMapper;
 import com.example.employee_management_system.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +26,7 @@ public class EmployeeController {
 
 
     @PostMapping("/create")
-    public ResponseEntity<Employee> CreateEmployee(@RequestBody CreateEmployeeDto employee) {
+    public ResponseEntity<CreatedEmployeeDto> CreateEmployee(@Valid @RequestBody CreateEmployeeDto employee) {
         return ResponseEntity.ok(employeeService.save(employee));
     }
 
@@ -39,14 +41,25 @@ public class EmployeeController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id,@RequestBody Employee employee) {
+    public ResponseEntity<UpdatedEmployeeDto> updateEmployee(@PathVariable Long id, @RequestBody Employee employee) {
         return ResponseEntity.ok(employeeService.update(id, employee));
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
+    public ResponseEntity<Boolean> deleteEmployee(@PathVariable Long id) {
         employeeService.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Boolean.TRUE);
+    }
+
+    @PutMapping("/assign/{employeeId}/department/{departmentId}")
+    public ResponseEntity<EmployeeDto> assignEmployeeToDepartment(@PathVariable Long employeeId,
+                                                               @PathVariable Long departmentId) {
+        return ResponseEntity.ok(employeeService.assignEmployeeToDepartment(employeeId, departmentId));
+    }
+
+    @PutMapping("/unassign/{employeeId}/department")
+    public ResponseEntity<EmployeeDto> unassignEmployeeFromDepartment(@PathVariable Long employeeId) {
+        return ResponseEntity.ok(employeeService.unassignEmployeeFromDepartment(employeeId));
     }
 
 }

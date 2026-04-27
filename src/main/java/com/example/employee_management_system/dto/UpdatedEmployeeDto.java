@@ -1,15 +1,13 @@
 package com.example.employee_management_system.dto;
 
 import com.example.employee_management_system.dto.auth.DepartmentDto;
-import com.example.employee_management_system.entity.Employee;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
-public class EmployeeDto {
-
-    private  Long id;
+public class UpdatedEmployeeDto {
+    private Long id;
     private String name;
     private double salary;
-    private DepartmentDto department;
-    private UserDto user;
 }

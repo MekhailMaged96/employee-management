@@ -16,4 +16,6 @@ public interface AuthService {
     List<UserDto> getAllUsers();
     UserDto getUserById(Long id);
     UserDto createUser(RegisterRequest request);
+    UserDto assignRolesToUser(Long userId, java.util.Set<Long> roleIds);
+    UserDto unassignRolesFromUser(Long userId, java.util.Set<Long> roleIds);
 }

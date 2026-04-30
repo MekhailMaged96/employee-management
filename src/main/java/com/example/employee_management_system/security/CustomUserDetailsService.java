@@ -13,14 +13,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-     // Implement the loadUserByUsername method to fetch user details from the database
+     // ✅ Use findWithRolesByUsername (@EntityGraph) so roles are loaded eagerly.
+     //    Without this, accessing user.getRoles() outside a transaction would
+     //    throw LazyInitializationException because the filter runs outside @Transactional.
      @Override
      public UserDetails loadUserByUsername(String username) {
 
-         var user = userRepository.findByUsername(username)
-                 .orElseThrow(() ->
-                         new UsernameNotFoundException("User not found"));
+         var user = userRepository.findWithRolesByUsername(username)
+                  .orElseThrow(() ->
+                          new UsernameNotFoundException("User not found"));
 
-         return new CustomUserDetails(user);
-     }
+          return new CustomUserDetails(user);
+      }
 }

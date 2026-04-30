@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.employee_management_system.exception.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,7 +67,13 @@ public class AuthServiceImpl implements AuthService {
 
         employeeRepository.save(employee);
 
-        String token = jwtUtil.generateToken(saved.getUsername());
+        // ✅ collect role names before passing to token
+        Set<String> roleNames = saved.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
+
+        // ✅ embed username, userId AND roles in the token
+        String token = jwtUtil.generateToken(saved.getUsername(), saved.getId(), roleNames);
 
         return new AuthResponse(token);
     }
@@ -74,14 +81,21 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
 
-        User user = userRepository.findByUsername(request.getUsername())
+        // ✅ use findWithRolesByUsername so roles are eagerly loaded (avoids LazyInitializationException)
+        User user = userRepository.findWithRolesByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
 
-        String token = jwtUtil.generateToken(user.getUsername());
+        // ✅ collect role names
+        Set<String> roleNames = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
+
+        // ✅ embed username, userId AND roles
+        String token = jwtUtil.generateToken(user.getUsername(), user.getId(), roleNames);
 
         return new AuthResponse(token);
     }
@@ -118,6 +132,61 @@ public class AuthServiceImpl implements AuthService {
 
         User saved = userRepository.save(user);
 
+        return userMapper.toDto(saved);
+    }
+
+
+
+
+    @Override
+    @Transactional
+    public UserDto assignRolesToUser(Long userId, Set<Long> roleIds) {
+        var user = userRepository.findWithRolesById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        Set<Role> roles = new HashSet<>(roleRepository.findAllById(roleIds));
+
+        if(roles.size() != roleIds.size()) {
+
+            Set<Long> foundsIds = roles.stream().map(Role::getId).collect(Collectors.toSet());
+            Set<Long> missing = new HashSet<>(roleIds);
+            missing.removeAll(foundsIds);
+            throw new ResourceNotFoundException("Roles not found: " + missing);
+        }
+        Set<Long> alreadyAssigned = user.getRoles() != null
+                ? user.getRoles().stream().map(Role::getId)
+                 .filter(roleIds::contains)
+                 .collect(Collectors.toSet())
+                : new HashSet<>();
+
+        if (!alreadyAssigned.isEmpty()) {
+            throw new BusinessException("Roles already assigned to user: " + alreadyAssigned);
+        }
+
+        user.getRoles().addAll(roles);
+
+        return userMapper.toDto(user);
+    }
+
+    @Override
+    @Transactional
+    public UserDto unassignRolesFromUser(Long userId, Set<Long> roleIds) {
+        User user = userRepository.findWithRolesById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        var currentRoleIds  = user.getRoles().stream().map(Role::getId).collect(Collectors.toSet());
+
+        Set<Long> notAssigned = roleIds.stream()
+                .filter(id -> !currentRoleIds.contains(id))
+                .collect(Collectors.toSet());
+
+        if(!notAssigned.isEmpty()) {
+            throw new BusinessException("Roles not assigned to user: " + notAssigned);
+        }
+
+        user.getRoles().removeIf(role -> roleIds.contains(role.getId()));
+
+        User saved = userRepository.save(user);
         return userMapper.toDto(saved);
     }
 }

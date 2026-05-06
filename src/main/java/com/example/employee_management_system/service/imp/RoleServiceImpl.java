@@ -1,12 +1,16 @@
 package com.example.employee_management_system.service.imp;
 
+import com.example.employee_management_system.constants.CacheNames;
 import com.example.employee_management_system.dto.RoleDto;
 import com.example.employee_management_system.entity.Role;
 import com.example.employee_management_system.exception.BusinessException;
 import com.example.employee_management_system.exception.ResourceNotFoundException;
 import com.example.employee_management_system.repository.RoleRepository;
 import com.example.employee_management_system.service.RoleService;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ public class RoleServiceImpl implements RoleService {
 
 	@Override
 	@Transactional
+	@CacheEvict(value = {CacheNames.ROLES, CacheNames.ROLE_BY_ID}, allEntries = true)
 	public RoleDto create(RoleDto roleDto) {
 		roleRepository.findByName(roleDto.getName()).ifPresent(r -> {
 			throw new BusinessException("Role already exists with name: " + roleDto.getName());
@@ -31,22 +36,26 @@ public class RoleServiceImpl implements RoleService {
 		return new RoleDto(saved.getId(), saved.getName());
 	}
 
-	@Override
-	public List<RoleDto> getAll() {
-		return roleRepository.findAll().stream()
-				.map(r -> new RoleDto(r.getId(), r.getName()))
-				.collect(Collectors.toList());
-	}
+    @Override
+    @Cacheable(value = CacheNames.ROLES)
+    public List<RoleDto> getAll() {
+        return roleRepository.findAll().stream()
+                .map(r -> new RoleDto(r.getId(), r.getName()))
+                .collect(Collectors.toList());
+    }
 
 	@Override
+	@Cacheable(value = CacheNames.ROLE_BY_ID, key = "#id")
 	public RoleDto getById(Long id) {
 		Role r = roleRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Role not found with id: " + id));
 		return new RoleDto(r.getId(), r.getName());
 	}
 
+
 	@Override
 	@Transactional
+	@CacheEvict(value = {CacheNames.ROLES, CacheNames.ROLE_BY_ID}, allEntries = true)
 	public RoleDto update(Long id, RoleDto roleDto) {
 		Role role = roleRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Role not found with id: " + id));
@@ -65,6 +74,7 @@ public class RoleServiceImpl implements RoleService {
 
 	@Override
 	@Transactional
+	@CacheEvict(value = {CacheNames.ROLES, CacheNames.ROLE_BY_ID}, allEntries = true)
 	public void delete(Long id) {
 		Role role = roleRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Role not found with id: " + id));

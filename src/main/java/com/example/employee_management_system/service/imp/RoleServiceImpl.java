@@ -9,17 +9,21 @@ import com.example.employee_management_system.repository.RoleRepository;
 import com.example.employee_management_system.service.RoleService;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
+
+    private  final Logger log = LoggerFactory.getLogger(RoleServiceImpl.class);
 
 	private final RoleRepository roleRepository;
 
@@ -39,6 +43,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Cacheable(value = CacheNames.ROLES)
     public List<RoleDto> getAll() {
+        log.info("Fetching all roles from database");
         return roleRepository.findAll().stream()
                 .map(r -> new RoleDto(r.getId(), r.getName()))
                 .collect(Collectors.toList());

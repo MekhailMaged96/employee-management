@@ -1,7 +1,7 @@
 package com.example.employee_management_system.entity;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+
 @Entity
 @Getter
 @Setter
@@ -24,4 +24,9 @@ public class Employee {
     @JoinColumn(name = "department_id")
     private  Department department;
 
+    @OneToOne(mappedBy = "employee", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private AttachmentFolder attachmentFolder;
+
 }
+
+

@@ -1,0 +1,32 @@
+package com.example.employee_management_system.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "attachments")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Attachment {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id", nullable = false)
+    private Employee employee;
+
+    private String originalFileName;      // User uploaded filename (e.g., "profile.jpg")
+    private String storedFileName;        // Stored on disk (e.g., "emp_123_abc123.jpg")
+    private String mimeType;              // Content type (e.g., "image/jpeg")
+    private Long fileSize;                // File size in bytes
+    private LocalDateTime uploadedAt;     // Upload timestamp
+    private String fileStoragePath;       // Relative or absolute path to the file
+
+}
+
